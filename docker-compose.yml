@@ -26,4 +26,4 @@ services:
       - db
     volumes:
       - ./sql/migrations:/flyway/sql
-    command: "migrate -locations=filesystem:/flyway/sql"
+    restart: on-failure
