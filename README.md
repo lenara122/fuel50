@@ -1,22 +1,22 @@
 # Fuel50 - Dockerized Flyway Migration
-This repository contains a set of tools and configurations to manage PostgreSQL database migrations using Flyway, all powered by Docker.
-- Docker Compose configuration for running PostgreSQL and Flyway.
-- Scripts for fresh installations and updates.
-- GitHub Actions CI/CD pipeline for building and pushing Docker images to GitHub Container Registry when migration files are updated
-## Directory Structure
+This project provides a containerized setup to run **Flyway database migrations** against a **PostgreSQL** database using **Docker Compose**.
+It supports:
+-  Clean, fresh installation (for local dev/testing)
+-  Schema updates and incremental Flyway migrations without wiping existing data
+-  CI/CD-friendly Docker image build & push via GitHub Actions
+## Project Structure
 
 ```
 fuel50/
 ├── .github/
 │   └── workflows/
-│       └── docker-image.yml      # GitHub Actions CI/CD configuration
-├── data/                         # Directory to store PostgreSQL data (persisted across container restarts)
+│       └── docker-image.yml      # GitHub Action to build & push Flyway image to GHCR
 ├── sql/
-│   └── migrations/               # SQL migration scripts (V1, V2, etc.)
-├── Dockerfile                    # Dockerfile to build the Flyway migration container
-├── docker-compose.yml            # Docker Compose configuration for the db(PostgreSQL) and Flyway services
-├── fresh_install.sh              # Script for fresh installation/setup
-├── update.sh                     # Script for updating the containers and images
+│   └── migrations/               # Flyway migration scripts
+├── Dockerfile                    # Builds Flyway image with migration scripts
+├── docker-compose.yml            # Defines PostgreSQL and Flyway services
+├── fresh_install.sh              # Script for a fresh install of the DB and Flyway migrations 
+├── update.sh                     # Script for applying incremental Flyway migrations with updated images
 └── README.md                     # This file
 ```
 
@@ -42,7 +42,7 @@ lena@lena:~/assessment/testing2/fuel50/sql/migrations$ ls
 V1__schema_init.sql  V2__data_init.sql  V3__schema_add_col.sql  V4__data_add_col.sql  V5__data_add_col.sql
 lena@lena:~/assessment/testing2/fuel50/sql/migrations$ 
 ```
-Then Flyway Migration will run all scripts in order after the db container starts.
+Then Flyway Migration will run all scripts in order after the db service starts.
 
 Current sql migration scripts:
 - V1__schema_init.sql      -> creates a table users with id, name columns
@@ -68,17 +68,40 @@ postgres=# select * from users;
 postgres=# 
 
 ```
+
+Logs after running fresh_install.sh:
+```
+lena@lena:~/assessment/testing2/fuel50$ ./fresh_install.sh 
+Stop and remove containers, networks, and volumes
+...
+Wait for DB to be ready...
+Run Flyway migrations using pulled image
+Creating fuel50_flyway_run ... done
+Flyway OSS Edition 11.7.0 by Redgate
+
+See release notes here: https://rd.gt/416ObMi
+Database: jdbc:postgresql://db:5432/postgres (PostgreSQL 17.4)
+Schema history table "public"."flyway_schema_history" does not exist yet
+Successfully validated 5 migrations (execution time 00:00.038s)
+Creating Schema History table "public"."flyway_schema_history" ...
+Current version of schema "public": << Empty Schema >>
+Migrating schema "public" to version "1 - schema init"
+Migrating schema "public" to version "2 - data init"
+Migrating schema "public" to version "3 - schema add col"
+Migrating schema "public" to version "4 - data add col"
+Migrating schema "public" to version "5 - data add col"
+Successfully applied 5 migrations to schema "public", now at version v5 (execution time 00:00.026s)
+Migration is completed
+```
 ### **Update script**
 
 To pull the latest images and update the database schema and data of your existing installation:
 ```bash
-# Navigate to the directory where you have already cloned the Fuel repository., e.g cd ~/fuel50
+# Navigate to the directory where you have already cloned the Fuel repository., e.g 
+cd ~/fuel50
 ./update
 ```
-Let's say you have already done a fresh install and manually added a user (e.g., user 4), running ./update.sh
-will not delete your data. Flyway will only apply new migration scripts that haven’t been executed yet.
-It tracks migrations using the flyway_schema_history table. So if i manually added user 4 and somenone pushed a
-migration script to add another user, when i run the ./update.sh my data will persist and i will also get the new user:
+If you've already done a fresh install and manually added a user (e.g., user 4), running ./update.sh will not delete your data. Flyway will only apply new migration scripts that haven’t been executed yet. It tracks migrations using the flyway_schema_history table. So, if you manually added user 4 and someone pushed a migration script to add another user, when you run ./update.sh, your data will persist, and the new user will be added:
 ```
  id |  username  |  name  |  address  
 ----+------------+--------+-----------
@@ -89,18 +112,24 @@ migration script to add another user, when i run the ./update.sh my data will pe
   5 | username_5 | name_5 | address_5
 (7 rows)
 ```
-To check the logs of Flyway you can run:
+Logs after running ./update.sh:
 ```
-lena@lena:~/assessment/testing2/fuel50$ docker-compose logs flyway;
-Attaching to flyway_migrations
-flyway_migrations | Flyway OSS Edition 11.6.0 by Redgate
-flyway_migrations | 
-flyway_migrations | See release notes here: https://rd.gt/416ObMi
-flyway_migrations | Database: jdbc:postgresql://db:5432/postgres (PostgreSQL 17.4)
-flyway_migrations | Successfully validated 6 migrations (execution time 00:00.030s)
-flyway_migrations | Current version of schema "public": 5
-flyway_migrations | Migrating schema "public" to version "6 - data add col"
-flyway_migrations | Successfully applied 1 migration to schema "public", now at version v6 (execution time 00:00.016s)
+lena@lena:~/assessment/testing2/fuel50$ ./update.sh 
+Stopping and removing containers, but keep data volume
+...
+Wait for DB to become ready...
+Run Flyway migrations (incremental)
+Creating fuel50_flyway_run ... done
+Flyway OSS Edition 11.7.0 by Redgate
+
+See release notes here: https://rd.gt/416ObMi
+Database: jdbc:postgresql://db:5432/postgres (PostgreSQL 17.4)
+Successfully validated 6 migrations (execution time 00:00.034s)
+Current version of schema "public": 5
+Migrating schema "public" to version "6 - data add col"
+Successfully applied 1 migration to schema "public", now at version v6 (execution time 00:00.018s)
+Update complete. Latest images are running.
+Migration is completed
 ```
 ### 📝**Note**
 Ensure your migration scripts are placed in the sql/migrations directory and follow the Flyway naming conventions (VX__schema_{desc}.sql, VX_data_{desc}.sql, etc.).

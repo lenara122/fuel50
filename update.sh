@@ -2,13 +2,21 @@
 
 set -e  # Exit immediately on error
 
-echo "Stopping and removing containers..."
-docker-compose down -v
+echo "Stopping and removing containers, but keep data volume"
+docker-compose down
 
-docker rmi -f fuel50_flyway
-docker rmi -f postgres
+echo "Pull the latest image with updated migrations"
+docker-compose pull
 
-echo "Starting containers in detached mode..."
-docker-compose up --build -d
+echo "Start db container"
+docker-compose up -d db
+
+echo "Wait for DB to become ready..."
+sleep 3
+
+echo "Run Flyway migrations (incremental)"
+docker-compose run --rm flyway
 
 echo "Update complete. Latest images are running."
+
+echo "Migration is completed"

@@ -8,11 +8,16 @@ docker-compose down -v
 echo "Remove the 'data' directory if it exists"
 rm -rf data
 
-echo "Remove images if they exist, no error if not found"
-docker rmi -f fuel50_flyway || true
-docker rmi -f postgres || true
+echo "Pull latest images"
+docker-compose pull  # This grabs the latest from GHCR!
 
-echo "Rebuild and bring up the containers in detached mode"
-docker-compose up --build -d
-echo "Update complete. Latest images are running."
+echo "Start db container"
+docker-compose up -d db
 
+echo "Wait for DB to be ready..."
+sleep 3
+
+echo "Run Flyway migrations using pulled image"
+docker-compose run --rm flyway
+
+echo "Migration is completed"

@@ -15,7 +15,7 @@ services:
     restart: always
 
   flyway:
-    build: .
+    image: ghcr.io/lenara122/fuel50/flyway_migrations:latest
     container_name: flyway_migrations
     environment:
       FLYWAY_URL: jdbc:postgresql://db:5432/postgres
