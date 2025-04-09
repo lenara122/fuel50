@@ -1,0 +1,34 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    paths:
+      - 'sql/migrations/**'   # Trigger action only when migrations change
+    branches:
+      - main   # Or the branch you're working on
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Log in to Docker Hub (or GitHub Container Registry)
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.GITHUB_ACTOR }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build the Docker image
+        run: |
+          docker build -t ghcr.io/lenara122/fuel50/flyway_migrations:latest .
+
+      - name: Push the Docker image to GitHub Container Registry
+        run: |
+          docker push ghcr.io/lenara122/fuel50/flyway_migrations:latest
+

@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    container_name: db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: lenaki12
+      POSTGRES_DB: postgres
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+
+  flyway:
+    build: .
+    container_name: flyway_migrations
+    environment:
+      FLYWAY_URL: jdbc:postgresql://db:5432/postgres
+      FLYWAY_USER: postgres
+      FLYWAY_PASSWORD: lenaki12
+      FLYWAY_SCHEMAS: public
+    depends_on:
+      - db
+    volumes:
+      - ./sql/migrations:/flyway/sql
+    command: "migrate -locations=filesystem:/flyway/sql"
