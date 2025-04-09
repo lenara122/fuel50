@@ -36,22 +36,22 @@ cd fuel50
 ./fresh_install.sh
 ```
 
-E.g if under sql/migrations we have:
+For instance if your sql/migrations directory contains:
 ```
 lena@lena:~/assessment/testing2/fuel50/sql/migrations$ ls
 V1__schema_init.sql  V2__data_init.sql  V3__schema_add_col.sql  V4__data_add_col.sql  V5__data_add_col.sql
 lena@lena:~/assessment/testing2/fuel50/sql/migrations$ 
 ```
-then Flyway Migration will run all scripts after the db container is up. 
+Then Flyway Migration will run all scripts in order after the db container starts.
 
-According to current sql migration scripts:
+Current sql migration scripts:
 - V1__schema_init.sql      -> creates a table users with id, name columns
 - V2__data_init.sql        -> inserts 2 users
 - V3__schema_add_col.sql   -> adds 1 new column, called address
 - V4__data_add_col.sql     -> updates the address data for existing users
 - V5__data_add_col.sql     -> inserts 1 user
 
-To access the db container you can use below command:
+To connect to the running database container:
 ```
 lena@lena:~/assessment/testing2/fuel50$ docker exec -ti db psql -U postgres
 psql (17.4 (Debian 17.4-1.pgdg120+2))
@@ -70,18 +70,15 @@ postgres=#
 ```
 ### **Update script**
 
-To pull the latest images and update the database schema and data of your existing installation
+To pull the latest images and update the database schema and data of your existing installation:
 ```bash
 # Navigate to the directory where you have already cloned the Fuel repository., e.g cd ~/fuel50
 ./update
 ```
-E.g if i have already proceeded to a fresh installation and i manually added a user.
-then by running ./update.sh my data will persist and i will get any further migration updates that someone may have 
-pushed under sql/migrations/ in fuel50 repo.
-This happens because Flyway keeps track of the X versions(VX__) that has already been migrated under **flyway_schema_history** table. 
-So it will run only the X scripts it does not have run yet.
-
-So if i manually added user 4 and somenone pulled a user 5, when i run the ./update.sh i will get:
+Let's say you have already done a fresh install and manually added a user (e.g., user 4), running ./update.sh
+will not delete your data. Flyway will only apply new migration scripts that haven’t been executed yet.
+It tracks migrations using the flyway_schema_history table. So if i manually added user 4 and somenone pushed a
+migration script to add another user, when i run the ./update.sh my data will persist and i will also get the new user:
 ```
  id |  username  |  name  |  address  
 ----+------------+--------+-----------
@@ -105,7 +102,7 @@ flyway_migrations | Current version of schema "public": 5
 flyway_migrations | Migrating schema "public" to version "6 - data add col"
 flyway_migrations | Successfully applied 1 migration to schema "public", now at version v6 (execution time 00:00.016s)
 ```
-### **Note**
+### 📝**Note**
 Ensure your migration scripts are placed in the sql/migrations directory and follow the Flyway naming conventions (VX__schema_{desc}.sql, VX_data_{desc}.sql, etc.).
 
 
