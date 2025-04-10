@@ -30,8 +30,17 @@ Ensure you have installed [Docker Engine](https://docs.docker.com/engine/install
 
 To start from scratch, including a fresh PostgreSQL database and data:
 
-```bash
+If you don’t have an SSH key set up for GitHub, use the HTTPS method to clone the repository:
+```
+git clone https://github.com/lenara122/fuel50.git
+```
+If you do have an SSH key set up with your GitHub account, you can use the SSH method to clone the repository:
+```
 git clone git@github.com:lenara122/fuel50.git
+```
+
+then run:
+```
 cd fuel50
 ./fresh_install.sh
 ```
